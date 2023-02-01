@@ -8,7 +8,7 @@ You can find script for:
 
 + [Reconstruct of fermionic correlation matrices](PurityRM.py)
 
-+ [Variational quantum eigensolver (VQE) for the $_4$H molecule](PurityRM.py)
++ [Variational quantum eigensolver (VQE) for the H-H-H-H molecule](PurityRM.py)
 
 License: Apache 2.0
 
