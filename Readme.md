@@ -10,6 +10,6 @@ You can find script for:
 
 + [Variational quantum eigensolver (VQE) for the H-H-H-H molecule](PurityRM.py)
 
-License: Apache 2.0
 
-Second version: Oct 2021
+
+License: Apache 2.0
