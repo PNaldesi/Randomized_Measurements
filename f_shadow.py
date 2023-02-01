@@ -3,7 +3,6 @@ from numba import  jit, njit, vectorize, prange
 from opt_einsum import contract
 
 import f_unitary as uu
-import f_molchem     as  cm
 
 
 def shadow(C2, C4, lbig, n_U, n_M):
