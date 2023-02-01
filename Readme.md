@@ -1,4 +1,4 @@
-# Python Script for reconstruction of fermionic correlation functions and fermionic VQE
+Reconstruction of fermionic correlation functions and fermionic Variational Quantum Eigensolver (VQE)
 
 In this repo we provide scripts used in our work
 
@@ -8,7 +8,7 @@ You can find script for:
 
 + [Reconstruct of fermionic correlation matrices](PurityRM.py)
 
-+ [Variational quantum eigensolver (VQE) for the H-H-H-H molecule](PurityRM.py)
++ [Variational quantum eigensolver for the H-H-H-H molecule](PurityRM.py)
 
 
 
