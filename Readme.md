@@ -8,9 +8,9 @@ You can find script for:
 
 + [Reconstruct of fermionic correlation matrices](Fermi_corr.py)
 
-+ [Reconstruction of the  bond-dissociation curve for the $`\sqrt{2}`$ molecule](H4_bond_dis.py)
++ [Reconstruction of the  bond-dissociation curve for the <pre xml:lang="latex">\sqrt{2}</pre> molecule](H4_bond_dis.py)
 
-+ [Variational quantum eigensolver (VQE) for the $`\sqrt{2}`$ molecule](VQE.py)
++ [Variational quantum eigensolver (VQE) for the <pre xml:lang="latex">\sqrt{2}</pre> molecule](VQE.py)
 
 License: Apache 2.0
 
