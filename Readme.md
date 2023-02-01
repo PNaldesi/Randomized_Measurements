@@ -16,3 +16,5 @@ Phyton code for:
 + [Variational quantum eigensolver (VQE) for the $`\sqrt{2}`$ molecule](VQE.py)
 
 License: Apache 2.0
+
+Second version: Oct 2021
