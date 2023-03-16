@@ -7,7 +7,7 @@ import f_molchem as cm
 
 
 
-def shadow(C2, C4, lbig, n_U, n_M):
+def shadow(C2, C4, lbig, n_U, n_M, psi=0, Op2=0):
 
 	ll    	= C2.shape[0]
 
@@ -18,7 +18,26 @@ def shadow(C2, C4, lbig, n_U, n_M):
 	nknk    = contract('Usl,Usm,Upx,Upy,lmxy -> Usp', U_h, U, U_h, U, C4,  optimize=True).real
 
 	if n_M > 0:
-		nk0, nknk0 = get_nnn(n_U, n_M, lbig, nk, nknk)
+		if psi==0:
+			print('please pass Psi to the function shadow()')
+
+		Dim_h  = len(psi)
+		Fock   = np.array([ np.diag(Op2[x][x].todense()) for x in range(lbig)], dtype=np.int64).T
+		OP2_ar = np.array([[Op2[i][j].todense() for i in range(lbig) ] for j in range(lbig)])
+		
+		Dict = {'psi'	: psi,
+				'U'  	: U,
+				'Dim_h'	: Dim_h,		        
+		        'n_M'	: n_M, 
+		        'n_U'	: n_U, 
+		        'Ns' 	: lbig,		       
+		        'Fock'  : Fock, 		       
+		        'OP2_ar': OP2_ar,
+		        }
+
+		nk0   = ff.get_nnn()
+		nknk0 = contract('Ui,Uj->Uij', nk0, nk0)
+
 	else:
 		nk0 	= nk
 		nknk0	= nknk
@@ -33,7 +52,7 @@ def shadow(C2, C4, lbig, n_U, n_M):
 	return	 mat2, mat4
 
 
-def shad_en(C2, C4, lbig, n_U, n_M, H2, H4):
+def shad_en(C2, C4, lbig, n_U, n_M, H2, H4, psi=0, Op2=0):
 	
 	ll    	= C2.shape[0]
 	mat2,mat4 = shadow(C2, C4, lbig, n_U, n_M)
@@ -58,70 +77,66 @@ def shad_en(C2, C4, lbig, n_U, n_M, H2, H4):
 
 
 
-# here we simulate finite number of measurements
+#### .... PROJECTIVE MEASUREMENTS
+
+def get_n(**args):
+
+    psi   = args.get('psi')
+    U     = args.get('U')
+    Dim_h = args.get('Dim_h')
+    n_M   = args.get('n_M')
+    n_U   = args.get('n_U')
+    Ns    = args.get('Ns')
+    Fock  = args.get('Fock')
+    OP2_ar= args.get('OP2_ar')
+
+    nk0     = np.zeros((n_U,Ns))
+
+    for g in tqdm(range(n_U)):
+        
+        hpq     = 1.j*sp.linalg.logm(U[g])
+        Hpq     = contract(' ij, ijxy -> xy', hpq, OP2_ar, optimize=True)
+        
+        Hpq_sp  = sparse.csr_matrix(-1j*Hpq)
+        psiU    = exp_m(Hpq_sp,psi)
+        
+        nk0[g]  = get_measurements(psiU, Dim_h, n_M, Fock)
+
+        nk0     = np.mean(nk0, axis=0)
+
+    return nk0
+
+def get_measurements(psi, Dim_h, n_M, Fock):
+
+    prob  = np.abs(psi)**2
+    ind_M = tuple([rand_choice_nb(np.arange(Dim_h), prob, n_M)])
+    occ   = Fock[ind_M]
+    
+    if n_M == 1:
+        occ = occ[0]
+    
+    return occ
+
 
 @njit(parallel=True)
-def get_nnn(n_U, n_M, lbig, nk, nknk):
-	
-	nk0 	= np.zeros((n_U,lbig))
-	nknk0 	= np.zeros((n_U,lbig,lbig))
+def rand_choice_nb(arr, prob, num_M):
 
-	for g in prange(n_U):
+    """
+    :param arr:     A 1D numpy array of values to sample from.
+    :param prob:    A 1D numpy array of probabilities for the given samples.
+    :return:        A random sample from the given array with a given probability.
+    """
 
-		prob     = nk[g]
-		nk0[g]   = get_prob(prob, n_M)
+    choice = []
 
-		prob   	 = nknk[g].flatten()
-		nknk0[g] = np.reshape(get_prob(prob, n_M),(lbig,lbig))
+    for i in prange(num_M):
+        pp = arr[np.searchsorted(np.cumsum(prob), np.random.random(), side="right")]
+        choice.append(pp)
+        
+    return choice
 
-	return nk0, nknk0
 
-@njit(parallel=True)
-def get_prob(nk0,n_M):
 
-	nk   = np.real(nk0)
-	n_s  = len(nk)
-
-	arr  = np.arange(n_s)
-	prob = nk/np.sum(nk)
-	n_p  = np.int(round(np.sum(nk)))
-
-	nk0   = np.zeros(n_s)
-
-	for x in range(n_M):
-
-		dat    = rand_choice_nb(arr, prob, n_p)
-		nk0   += dat/n_M
-
-	return nk0
-
-@njit(parallel=True)
-def rand_choice_nb(arr, prob, n_p):
-
-	"""
-	:param arr: 	A 1D numpy array of values to sample from.
-	:param prob: 	A 1D numpy array of probabilities for the given samples.
-	:return: 		A random sample from the given array with a given probability.
-	"""
-
-	res   = np.zeros(n_p)-1
-	state = np.zeros(len(arr))
-	j   = 0
-
-	while (j<n_p):
-		pp = arr[np.searchsorted(np.cumsum(prob), np.random.random(), side="right")]
-		
-		if pp in res:
-			continue
-
-		res[j]    = pp
-		state[pp] = 1
-		j += 1
-
-	if np.abs(np.sum(state)-n_p)>0.1:
-		print('achtung error', np.sum(state), n_p)
-
-	return state
 
 
 
